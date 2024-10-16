@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message List</title>
+    <style>
+ 
+        .progress-bar-container {
+            width: 100%;
+            background-color: #f3f3f3;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            width: 0;
+            height: 30px;
+            background-color: #4caf50;
+            text-align: center;
+            color: white;
+            line-height: 30px;
+        }
+
+      
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+<h1>Letters</h1>
+
+<div class="progress-bar-container">
+    <div class="progress-bar" style="color: black" id="progress-bar">Чтение сообщений</div>
+</div>
+
+
+<table id="message-table">
+    <thead>
+    <tr>
+        <th>UID</th>
+        <th>Тип почты</th>
+        <th>Тема</th>
+        <th>Содержание(сокращено)</th>
+        <th>Дата отправки</th>
+        <th>Дата получения(обработки в системе)</th>
+        <th>Прикрепленные файлы</th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+<script>
+
+    const socket = new WebSocket('ws://' + window.location.host + '/ws/letters/');
+    console.log(socket);
+    socket.onmessage = function(event) {
+        let data = JSON.parse(event.data);
+        console.log(data);
+
+        if (data.progress) {
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = data.progress + '%';
+            progressBar.textContent = data.status;
+        }
+
+        if (data.new_message) {
+            const tableBody = document.getElementById('message-table').getElementsByTagName('tbody')[0];
+            const newRow = tableBody.insertRow();
+            newRow.innerHTML = `
+                    <td>${data.new_message.uid}</td>
+                    <td>${data.new_message.type_mail}</td>
+                    <td>${data.new_message.theme}</td>
+                    <td>${data.new_message.text.substring(0, 100)}...</td>
+                    <td>${data.new_message.dispatch_date}</td>
+                    <td>${data.new_message.receipt_date}</td>
+                    <td>${data.new_message.attachments.join(', \n')}</td>
+                `;
+        }
+    };
+
+    socket.onclose = function(event) {
+        console.log('WebSocket connection closed.');
+    };
+</script>
+</body>
+</html>
