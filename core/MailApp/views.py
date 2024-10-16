@@ -1,12 +1,8 @@
-from asgiref.sync import sync_to_async
-from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic.edit import FormView, UpdateView
 
-from MailApp.components import functions
-from MailApp.components.functions import save_mail
 from MailApp.forms import MailForm
-from MailApp.models import MailType, Letter
+from MailApp.models import MailType
 
 
 class MailFormView(FormView):
@@ -30,21 +26,6 @@ def my_mails(request):
         "my_mails": MailType.objects.all()
     }
     return render(request, "MailApp/my_mails.html",context)
-
-def download_mail(request):
-    mail_type = "mail.ru"
-    imap = functions.connect_to_mailbox(mail_type)
-
-    res, unseen_msg = imap.uid("search", None, "ALL")
-    unseen_msg = unseen_msg[0].decode(encoding="utf-8").split()
-    last_uid = sync_to_async(Letter.objects.all().order_by('-uid').first())
-    new_uids = [uid for uid in unseen_msg if int(uid) > last_uid.uid]
-    print(new_uids)
-    if len(new_uids) > 0:
-        save_mail(new_uids, imap, mail_type)
-        return HttpResponse(200)
-    else:
-        return HttpResponse("No emails found", status=404)
 
 
 def all_mails(request):
